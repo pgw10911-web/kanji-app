@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>오늘의 한자 학습</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 360px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Pretendard", "Noto Sans KR", "Noto Sans JP", sans-serif;
+      font-weight: 400;
+      color: #333;
+      background: #f7f2e8;
+    }
+
+    button, input, select { font: inherit; font-weight: 400; }
+    button { border: 0; cursor: pointer; }
+
+    .app {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 20px 16px 90px;
+      background: #f7f2e8;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .app-title {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.2;
+      letter-spacing: -0.03em;
+      font-weight: 400;
+    }
+
+    .level-select {
+      padding: 8px 10px;
+      border: 1px solid #d8e6d0;
+      border-radius: 999px;
+      background: #fffdf8;
+      color: #555;
+      outline: none;
+    }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .panel {
+      padding: 18px;
+      border-radius: 24px;
+      background: #fffdf8;
+      box-shadow: 0 10px 24px rgba(80, 70, 50, 0.08);
+    }
+
+    .today-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .today-title h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -0.03em;
+      font-weight: 400;
+    }
+
+    .day-badge {
+      flex: 0 0 auto;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #d8e6d0;
+      color: #36513f;
+      font-size: 13px;
+    }
+
+    .progress-box {
+      margin: 12px 0 16px;
+    }
+
+    .progress-text {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .progress-track {
+      overflow: hidden;
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: #eee4d4;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: #8faf9d;
+      transition: width 0.3s ease;
+    }
+
+    .today-list {
+      display: grid;
+      gap: 10px;
+      margin: 0 0 16px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .today-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: #f7f2e8;
+    }
+
+    .today-word {
+      font-size: 18px;
+      color: #333;
+    }
+
+    .reading {
+      color: #8faf9d;
+      font-size: 18px;
+      font-weight: 400;
+    }
+
+    .meaning {
+      margin-top: 3px;
+      font-size: 14px;
+      color: #777;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: #ddd2c3;
+    }
+
+    .today-item.done .status-dot { background: #8faf9d; }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .btn {
+      width: 100%;
+      min-height: 46px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: #8faf9d;
+      color: #fff;
+    }
+
+    .btn.sub { background: #d8e6d0; color: #36513f; }
+    .btn.light { background: #fffdf8; color: #555; border: 1px solid #d8e6d0; }
+    .btn.warn { background: #e59a8a; color: #fff; }
+    .btn:disabled { opacity: 0.5; cursor: default; }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .menu-card {
+      min-height: 92px;
+      padding: 16px;
+      border-radius: 22px;
+      background: #fffdf8;
+      box-shadow: 0 8px 18px rgba(80, 70, 50, 0.06);
+      text-align: left;
+      color: #333;
+    }
+
+    .menu-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 17px;
+      font-weight: 400;
+    }
+
+    .menu-card span { font-size: 13px; color: #777; }
+
+    .flash-area { perspective: 1000px; }
+
+    .flash-card {
+      position: relative;
+      width: 100%;
+      min-height: 460px;
+      border-radius: 28px;
+      transform-style: preserve-3d;
+      transition: transform 0.5s ease;
+    }
+
+    .flash-card.flipped { transform: rotateY(180deg); }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 26px 22px;
+      border-radius: 28px;
+      background: #fffdf8;
+      box-shadow: 0 12px 28px rgba(80, 70, 50, 0.09);
+      backface-visibility: hidden;
+      text-align: center;
+    }
+
+    .card-back {
+      justify-content: flex-start;
+      align-items: stretch;
+      transform: rotateY(180deg);
+      text-align: left;
+      overflow-y: auto;
+    }
+
+    .back-main-word {
+      margin: 0 0 14px;
+      font-size: 34px;
+      line-height: 1.25;
+      text-align: center;
+      font-weight: 400;
+    }
+
+    .detail-box {
+      display: grid;
+      gap: 10px;
+      padding: 16px;
+      border-radius: 20px;
+      background: #f7f2e8;
+    }
+
+    .detail-line {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.55;
+      color: #555;
+    }
+
+    .detail-label {
+      color: #333;
+    }
+
+    .example-control {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 4px;
+      padding-top: 12px;
+      border-top: 1px solid #eadfce;
+    }
+
+    .example-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .example-text p {
+      margin: 0 0 6px;
+      line-height: 1.55;
+      font-size: 16px;
+    }
+
+    .example-text p:last-child { margin-bottom: 0; color: #777; }
+
+    .mini-speak-btn {
+      flex: 0 0 auto;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: #d8e6d0;
+      color: #36513f;
+      font-size: 13px;
+    }
+
+    .kanji-big {
+      margin: 0 0 14px;
+      font-size: 82px;
+      line-height: 1;
+      font-weight: 400;
+      letter-spacing: -0.06em;
+    }
+
+    .front-word {
+      margin: 0 0 6px;
+      font-size: 28px;
+      line-height: 1.25;
+      font-weight: 400;
+    }
+
+    .hint { margin: 14px 0 0; font-size: 14px; color: #888; }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .card-head h2 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.25;
+      font-weight: 400;
+    }
+
+    .star-btn {
+      flex: 0 0 auto;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #f7f2e8;
+      color: #999;
+      font-size: 22px;
+    }
+
+    .star-btn.on { color: #d99b3d; }
+
+    .info-line {
+      margin: 0 0 10px;
+      font-size: 16px;
+      color: #666;
+    }
+
+    .example-box {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 18px;
+      background: #f7f2e8;
+    }
+
+    .example-box p {
+      margin: 0 0 8px;
+      line-height: 1.6;
+      font-size: 16px;
+    }
+
+    .example-box p:last-child { margin-bottom: 0; color: #777; }
+
+    .control-row {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .quiz-box h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+      line-height: 1.4;
+      font-weight: 400;
+    }
+
+    .quiz-type {
+      margin: 0 0 8px;
+      color: #8faf9d;
+      font-size: 14px;
+    }
+
+    .options {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .option {
+      padding: 14px;
+      border-radius: 18px;
+      background: #f7f2e8;
+      color: #333;
+      text-align: left;
+      border: 1px solid transparent;
+    }
+
+    .option.correct { border-color: #8faf9d; background: #e5efdf; }
+    .option.wrong { border-color: #e59a8a; background: #f8ded8; }
+
+    .result-message {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 18px;
+      background: #fffdf8;
+      border: 1px solid #d8e6d0;
+      color: #555;
+      line-height: 1.55;
+    }
+
+    .word-toolbar {
+      display: grid;
+      grid-template-columns: 1fr 120px;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .search-input, .filter-select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #d8e6d0;
+      border-radius: 16px;
+      background: #fffdf8;
+      outline: none;
+    }
+
+    .word-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .word-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: #fffdf8;
+      box-shadow: 0 6px 14px rgba(80, 70, 50, 0.05);
+      cursor: pointer;
+    }
+
+    .word-card:active { transform: scale(0.99); }
+
+    .word-card-guide {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #8faf9d;
+    }
+
+    .word-card strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 18px;
+      font-weight: 400;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      left: 50%;
+      bottom: 0;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      width: 100%;
+      max-width: 480px;
+      transform: translateX(-50%);
+      padding: 8px 10px 12px;
+      background: rgba(255, 253, 248, 0.94);
+      border-top: 1px solid #eadfce;
+      backdrop-filter: blur(8px);
+    }
+
+    .nav-btn {
+      padding: 9px 4px;
+      border-radius: 14px;
+      background: transparent;
+      color: #777;
+      font-size: 13px;
+    }
+
+    .nav-btn.active {
+      background: #d8e6d0;
+      color: #36513f;
+    }
+
+    @media (min-width: 481px) {
+      .app { min-height: calc(100vh - 24px); margin-top: 12px; border-radius: 32px 32px 0 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="top-bar">
+      <h1 class="app-title">오늘의 한자 학습</h1>
+      <select id="levelSelect" class="level-select" aria-label="레벨 선택">
+        <option value="ALL">전체</option>
+        <option value="N5">N5</option>
+        <option value="N4">N4</option>
+      </select>
+    </header>
+
+    <main>
+      <section id="homeSection" class="section active">
+        <div class="panel">
+          <div class="today-title">
+            <h2>오늘의 한자 학습</h2>
+            <span id="dayBadge" class="day-badge">Day 1</span>
+          </div>
+
+          <div class="progress-box">
+            <div class="progress-text">
+              <span id="progressText">0 / 300개 학습</span>
+              <span id="todayDoneText">오늘 0 / 5개</span>
+            </div>
+            <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
+          </div>
+
+          <ul id="todayList" class="today-list"></ul>
+
+          <div class="btn-row">
+            <button id="startTodayBtn" class="btn">오늘 5개 시작</button>
+            <button id="startTodayQuizBtn" class="btn sub">오늘 퀴즈</button>
+          </div>
+        </div>
+
+        <div class="menu-grid">
+          <button class="menu-card" data-move="flashSection"><strong>플래시카드</strong><span>한자, 발음, 예문 학습</span></button>
+          <button class="menu-card" data-move="quizSection"><strong>퀴즈</strong><span>뜻·읽기·예문·듣기</span></button>
+          <button class="menu-card" data-move="wordsSection"><strong>전체 단어</strong><span>300개 검색/필터</span></button>
+          <button class="menu-card" data-move="reviewSection"><strong>오답 복습</strong><span>틀린 단어 다시 학습</span></button>
+        </div>
+      </section>
+
+      <section id="flashSection" class="section">
+        <div class="flash-area">
+          <div id="flashCard" class="flash-card" role="button" tabindex="0" aria-label="플래시카드 뒤집기">
+            <div class="card-face card-front">
+              <p id="frontKanji" class="kanji-big">日</p>
+              <p id="frontWord" class="front-word">日本（にほん）</p>
+              <p id="frontMeaning" class="meaning">일본</p>
+              <p class="hint">카드를 누르면 뒤집히면서 발음이 나와요</p>
+            </div>
+            <div class="card-face card-back">
+              <div class="card-head">
+                <button id="favoriteBtn" class="star-btn" type="button" aria-label="즐겨찾기">☆</button>
+              </div>
+              <h2 id="backWord" class="back-main-word">日本（にほん）</h2>
+              <div class="detail-box">
+                <p id="backKanji" class="detail-line">한자: 日 / 本</p>
+                <p id="backMeaning" class="detail-line">뜻: 일본</p>
+                <p id="backLevel" class="detail-line">수준: N5</p>
+                <div class="example-control">
+                  <div class="example-text">
+                    <p id="exampleJa">日本<span class="reading">（にほん）</span>へ行<span class="reading">（い）</span>きます。</p>
+                    <p id="exampleKo">일본에 갑니다.</p>
+                  </div>
+                  <button id="exampleSpeakBtn" class="mini-speak-btn" type="button">예문 듣기</button>
+                </div>
+              </div>
+              <button id="speakBtn" class="btn sub" type="button" style="margin-top: 14px;">단어 발음 다시 듣기</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-row">
+          <button id="prevCardBtn" class="btn light">이전</button>
+          <button id="markDoneBtn" class="btn">학습 완료</button>
+          <button id="nextCardBtn" class="btn light">다음</button>
+        </div>
+      </section>
+
+      <section id="quizSection" class="section">
+        <div class="panel quiz-box">
+          <p id="quizType" class="quiz-type">뜻 고르기</p>
+          <h2 id="quizQuestion">問題</h2>
+          <div id="quizOptions" class="options"></div>
+          <div id="quizMessage" class="result-message" style="display:none;"></div>
+          <div class="btn-row" style="margin-top: 14px;">
+            <button id="listenQuizBtn" class="btn sub">발음 듣기</button>
+            <button id="nextQuizBtn" class="btn" disabled>다음 문제</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="wordsSection" class="section">
+        <div class="word-toolbar">
+          <input id="wordSearch" class="search-input" type="search" placeholder="한자, 히라가나, 뜻 검색" />
+          <select id="wordFilter" class="filter-select">
+            <option value="ALL">전체</option>
+            <option value="N5">N5</option>
+            <option value="N4">N4</option>
+            <option value="FAVORITE">즐겨찾기</option>
+            <option value="WRONG">오답</option>
+          </select>
+        </div>
+        <ul id="wordList" class="word-list"></ul>
+      </section>
+
+      <section id="reviewSection" class="section">
+        <div class="panel">
+          <div class="today-title">
+            <h2>오답 복습</h2>
+            <span id="wrongCount" class="day-badge">0개</span>
+          </div>
+          <p class="info-line">퀴즈에서 틀린 단어가 자동으로 저장됩니다.</p>
+          <div class="btn-row">
+            <button id="startWrongQuizBtn" class="btn warn">오답 퀴즈</button>
+            <button id="clearWrongBtn" class="btn light">오답 초기화</button>
+          </div>
+        </div>
+        <ul id="wrongList" class="word-list" style="margin-top: 14px;"></ul>
+      </section>
+    </main>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-move="homeSection">홈</button>
+    <button class="nav-btn" data-move="flashSection">카드</button>
+    <button class="nav-btn" data-move="quizSection">퀴즈</button>
+    <button class="nav-btn" data-move="wordsSection">단어</button>
+  </nav>
+
+  <script>
+    const KANJI_DATA = [
+      { id: 1, level: "N5", kanji: "日 本", word: "日本", reading: "にほん", meaning: "일본", example: "日本へ行きます。", exampleReading: "にほんへいきます。", exampleKo: "일본에 갑니다." },
+      { id: 2, level: "N5", kanji: "学 校", word: "学校", reading: "がっこう", meaning: "학교", example: "明日、学校へ行きます。", exampleReading: "あした、がっこうへいきます。", exampleKo: "내일 학교에 갑니다." },
+      { id: 3, level: "N5", kanji: "先 生", word: "先生", reading: "せんせい", meaning: "선생님", example: "先生に質問します。", exampleReading: "せんせいにしつもんします。", exampleKo: "선생님께 질문합니다." },
+      { id: 4, level: "N5", kanji: "時 間", word: "時間", reading: "じかん", meaning: "시간", example: "時間があります。", exampleReading: "じかんがあります。", exampleKo: "시간이 있습니다." },
+      { id: 5, level: "N5", kanji: "友 達", word: "友達", reading: "ともだち", meaning: "친구", example: "友達と話します。", exampleReading: "ともだちとはなします。", exampleKo: "친구와 이야기합니다." },
+      { id: 6, level: "N5", kanji: "電 車", word: "電車", reading: "でんしゃ", meaning: "전철", example: "電車で会社へ行きます。", exampleReading: "でんしゃでかいしゃへいきます。", exampleKo: "전철로 회사에 갑니다." },
+      { id: 7, level: "N5", kanji: "会 社", word: "会社", reading: "かいしゃ", meaning: "회사", example: "父は会社にいます。", exampleReading: "ちちはかいしゃにいます。", exampleKo: "아버지는 회사에 있습니다." },
+      { id: 8, level: "N5", kanji: "駅", word: "駅", reading: "えき", meaning: "역", example: "駅で待ちます。", exampleReading: "えきでまちます。", exampleKo: "역에서 기다립니다." },
+      { id: 9, level: "N5", kanji: "本", word: "本", reading: "ほん", meaning: "책", example: "本を読みます。", exampleReading: "ほんをよみます。", exampleKo: "책을 읽습니다." },
+      { id: 10, level: "N5", kanji: "水", word: "水", reading: "みず", meaning: "물", example: "水を飲みます。", exampleReading: "みずをのみます。", exampleKo: "물을 마십니다." },
+      { id: 11, level: "N5", kanji: "火", word: "火", reading: "ひ", meaning: "불", example: "火を使います。", exampleReading: "ひをつかいます。", exampleKo: "불을 사용합니다." },
+      { id: 12, level: "N5", kanji: "山", word: "山", reading: "やま", meaning: "산", example: "山が見えます。", exampleReading: "やまがみえます。", exampleKo: "산이 보입니다." },
+      { id: 13, level: "N5", kanji: "川", word: "川", reading: "かわ", meaning: "강", example: "川の近くを歩きます。", exampleReading: "かわのちかくをあるきます。", exampleKo: "강 근처를 걷습니다." },
+      { id: 14, level: "N5", kanji: "人", word: "人", reading: "ひと", meaning: "사람", example: "あの人は学生です。", exampleReading: "あのひとはがくせいです。", exampleKo: "저 사람은 학생입니다." },
+      { id: 15, level: "N5", kanji: "男", word: "男", reading: "おとこ", meaning: "남자", example: "男の人がいます。", exampleReading: "おとこのひとがいます。", exampleKo: "남자 사람이 있습니다." },
+      { id: 16, level: "N5", kanji: "女", word: "女", reading: "おんな", meaning: "여자", example: "女の人が話しています。", exampleReading: "おんなのひとがはなしています。", exampleKo: "여자 사람이 말하고 있습니다." },
+      { id: 17, level: "N5", kanji: "子 供", word: "子供", reading: "こども", meaning: "아이", example: "子供が公園で遊びます。", exampleReading: "こどもがこうえんであそびます。", exampleKo: "아이가 공원에서 놉니다." },
+      { id: 18, level: "N5", kanji: "大 学", word: "大学", reading: "だいがく", meaning: "대학교", example: "兄は大学で勉強します。", exampleReading: "あにはだいがくでべんきょうします。", exampleKo: "형은 대학교에서 공부합니다." },
+      { id: 19, level: "N5", kanji: "食 べ る", word: "食べる", reading: "たべる", meaning: "먹다", example: "朝ごはんを食べます。", exampleReading: "あさごはんをたべます。", exampleKo: "아침밥을 먹습니다." },
+      { id: 20, level: "N5", kanji: "飲 む", word: "飲む", reading: "のむ", meaning: "마시다", example: "お茶を飲みます。", exampleReading: "おちゃをのみます。", exampleKo: "차를 마십니다." },
+      { id: 21, level: "N5", kanji: "見 る", word: "見る", reading: "みる", meaning: "보다", example: "映画を見ます。", exampleReading: "えいがをみます。", exampleKo: "영화를 봅니다." },
+      { id: 22, level: "N5", kanji: "聞 く", word: "聞く", reading: "きく", meaning: "듣다, 묻다", example: "音楽を聞きます。", exampleReading: "おんがくをききます。", exampleKo: "음악을 듣습니다." },
+      { id: 23, level: "N5", kanji: "書 く", word: "書く", reading: "かく", meaning: "쓰다", example: "名前を書きます。", exampleReading: "なまえをかきます。", exampleKo: "이름을 씁니다." },
+      { id: 24, level: "N5", kanji: "読 む", word: "読む", reading: "よむ", meaning: "읽다", example: "新聞を読みます。", exampleReading: "しんぶんをよみます。", exampleKo: "신문을 읽습니다." },
+      { id: 25, level: "N5", kanji: "行 く", word: "行く", reading: "いく", meaning: "가다", example: "毎日、学校へ行きます。", exampleReading: "まいにち、がっこうへいきます。", exampleKo: "매일 학교에 갑니다." },
+      { id: 26, level: "N5", kanji: "来 る", word: "来る", reading: "くる", meaning: "오다", example: "友達が家に来ます。", exampleReading: "ともだちがいえにきます。", exampleKo: "친구가 집에 옵니다." },
+      { id: 27, level: "N5", kanji: "帰 る", word: "帰る", reading: "かえる", meaning: "돌아가다", example: "六時に家へ帰ります。", exampleReading: "ろくじにいえへかえります。", exampleKo: "6시에 집에 돌아갑니다." },
+      { id: 28, level: "N5", kanji: "買 う", word: "買う", reading: "かう", meaning: "사다", example: "店でパンを買います。", exampleReading: "みせでパンをかいます。", exampleKo: "가게에서 빵을 삽니다." },
+      { id: 29, level: "N5", kanji: "休 む", word: "休む", reading: "やすむ", meaning: "쉬다", example: "日曜日に休みます。", exampleReading: "にちようびにやすみます。", exampleKo: "일요일에 쉽니다." },
+      { id: 30, level: "N5", kanji: "話 す", word: "話す", reading: "はなす", meaning: "말하다", example: "日本語で話します。", exampleReading: "にほんごではなします。", exampleKo: "일본어로 말합니다." },
+      { id: 31, level: "N4", kanji: "勉 強", word: "勉強", reading: "べんきょう", meaning: "공부", example: "毎日、日本語を勉強します。", exampleReading: "まいにち、にほんごをべんきょうします。", exampleKo: "매일 일본어를 공부합니다." },
+      { id: 32, level: "N4", kanji: "練 習", word: "練習", reading: "れんしゅう", meaning: "연습", example: "漢字を練習します。", exampleReading: "かんじをれんしゅうします。", exampleKo: "한자를 연습합니다." },
+      { id: 33, level: "N4", kanji: "漢 字", word: "漢字", reading: "かんじ", meaning: "한자", example: "この漢字は難しいです。", exampleReading: "このかんじはむずかしいです。", exampleKo: "이 한자는 어렵습니다." },
+      { id: 34, level: "N4", kanji: "質 問", word: "質問", reading: "しつもん", meaning: "질문", example: "先生に質問があります。", exampleReading: "せんせいにしつもんがあります。", exampleKo: "선생님께 질문이 있습니다." },
+      { id: 35, level: "N4", kanji: "答 え", word: "答え", reading: "こたえ", meaning: "대답, 답", example: "答えを書いてください。", exampleReading: "こたえをかいてください。", exampleKo: "답을 써 주세요." },
+      { id: 36, level: "N4", kanji: "意 味", word: "意味", reading: "いみ", meaning: "의미", example: "この言葉の意味を知っています。", exampleReading: "このことばのいみをしっています。", exampleKo: "이 말의 의미를 알고 있습니다." },
+      { id: 37, level: "N4", kanji: "言 葉", word: "言葉", reading: "ことば", meaning: "말, 단어", example: "新しい言葉を覚えます。", exampleReading: "あたらしいことばをおぼえます。", exampleKo: "새로운 단어를 외웁니다." },
+      { id: 38, level: "N4", kanji: "覚 え る", word: "覚える", reading: "おぼえる", meaning: "외우다, 기억하다", example: "単語を覚えます。", exampleReading: "たんごをおぼえます。", exampleKo: "단어를 외웁니다." },
+      { id: 39, level: "N4", kanji: "忘 れ る", word: "忘れる", reading: "わすれる", meaning: "잊다", example: "宿題を忘れました。", exampleReading: "しゅくだいをわすれました。", exampleKo: "숙제를 잊었습니다." },
+      { id: 40, level: "N4", kanji: "宿 題", word: "宿題", reading: "しゅくだい", meaning: "숙제", example: "宿題をします。", exampleReading: "しゅくだいをします。", exampleKo: "숙제를 합니다." },
+      { id: 41, level: "N4", kanji: "授 業", word: "授業", reading: "じゅぎょう", meaning: "수업", example: "授業は九時に始まります。", exampleReading: "じゅぎょうはくじにはじまります。", exampleKo: "수업은 9시에 시작합니다." },
+      { id: 42, level: "N4", kanji: "始 ま る", word: "始まる", reading: "はじまる", meaning: "시작되다", example: "映画が始まります。", exampleReading: "えいががはじまります。", exampleKo: "영화가 시작됩니다." },
+      { id: 43, level: "N4", kanji: "終 わ る", word: "終わる", reading: "おわる", meaning: "끝나다", example: "仕事が終わりました。", exampleReading: "しごとがおわりました。", exampleKo: "일이 끝났습니다." },
+      { id: 44, level: "N4", kanji: "仕 事", word: "仕事", reading: "しごと", meaning: "일", example: "母は仕事をしています。", exampleReading: "はははしごとをしています。", exampleKo: "어머니는 일을 하고 있습니다." },
+      { id: 45, level: "N4", kanji: "病 院", word: "病院", reading: "びょういん", meaning: "병원", example: "病院へ行きました。", exampleReading: "びょういんへいきました。", exampleKo: "병원에 갔습니다." },
+      { id: 46, level: "N4", kanji: "医 者", word: "医者", reading: "いしゃ", meaning: "의사", example: "医者に見てもらいます。", exampleReading: "いしゃにみてもらいます。", exampleKo: "의사에게 진찰받습니다." },
+      { id: 47, level: "N4", kanji: "薬", word: "薬", reading: "くすり", meaning: "약", example: "薬を飲みます。", exampleReading: "くすりをのみます。", exampleKo: "약을 먹습니다." },
+      { id: 48, level: "N4", kanji: "風 邪", word: "風邪", reading: "かぜ", meaning: "감기", example: "風邪をひきました。", exampleReading: "かぜをひきました。", exampleKo: "감기에 걸렸습니다." },
+      { id: 49, level: "N4", kanji: "天 気", word: "天気", reading: "てんき", meaning: "날씨", example: "今日は天気がいいです。", exampleReading: "きょうはてんきがいいです。", exampleKo: "오늘은 날씨가 좋습니다." },
+      { id: 50, level: "N4", kanji: "雨", word: "雨", reading: "あめ", meaning: "비", example: "雨が降っています。", exampleReading: "あめがふっています。", exampleKo: "비가 내리고 있습니다." },
+      { id: 51, level: "N4", kanji: "雪", word: "雪", reading: "ゆき", meaning: "눈", example: "雪がたくさん降りました。", exampleReading: "ゆきがたくさんふりました。", exampleKo: "눈이 많이 내렸습니다." },
+      { id: 52, level: "N4", kanji: "空", word: "空", reading: "そら", meaning: "하늘", example: "空が青いです。", exampleReading: "そらがあおいです。", exampleKo: "하늘이 파랗습니다." },
+      { id: 53, level: "N4", kanji: "海", word: "海", reading: "うみ", meaning: "바다", example: "夏に海へ行きます。", exampleReading: "なつにうみへいきます。", exampleKo: "여름에 바다에 갑니다." },
+      { id: 54, level: "N4", kanji: "春", word: "春", reading: "はる", meaning: "봄", example: "春は暖かいです。", exampleReading: "はるはあたたかいです。", exampleKo: "봄은 따뜻합니다." },
+      { id: 55, level: "N4", kanji: "夏", word: "夏", reading: "なつ", meaning: "여름", example: "夏休みが楽しみです。", exampleReading: "なつやすみがたのしみです。", exampleKo: "여름방학이 기대됩니다." },
+      { id: 56, level: "N4", kanji: "秋", word: "秋", reading: "あき", meaning: "가을", example: "秋に旅行します。", exampleReading: "あきにりょこうします。", exampleKo: "가을에 여행합니다." },
+      { id: 57, level: "N4", kanji: "冬", word: "冬", reading: "ふゆ", meaning: "겨울", example: "冬は寒いです。", exampleReading: "ふゆはさむいです。", exampleKo: "겨울은 춥습니다." },
+      { id: 58, level: "N4", kanji: "旅 行", word: "旅行", reading: "りょこう", meaning: "여행", example: "家族と旅行します。", exampleReading: "かぞくとりょこうします。", exampleKo: "가족과 여행합니다." },
+      { id: 59, level: "N4", kanji: "家 族", word: "家族", reading: "かぞく", meaning: "가족", example: "家族は四人です。", exampleReading: "かぞくはよにんです。", exampleKo: "가족은 네 명입니다." },
+      { id: 60, level: "N4", kanji: "料 理", word: "料理", reading: "りょうり", meaning: "요리", example: "日本料理が好きです。", exampleReading: "にほんりょうりがすきです。", exampleKo: "일본 요리를 좋아합니다." }
+    ];
+
+    const TOTAL_TARGET = 300;
+    const DAILY_COUNT = 5;
+    const STORAGE_KEY = "kanjiAppProgressV1";
+
+    const state = {
+      section: "homeSection",
+      level: "ALL",
+      flashPool: [],
+      flashIndex: 0,
+      quizPool: [],
+      quizIndex: 0,
+      currentQuiz: null,
+      progress: loadProgress()
+    };
+
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => document.querySelectorAll(selector);
+
+    const elements = {
+      sections: $$(".section"),
+      navBtns: $$(".nav-btn"),
+      levelSelect: $("#levelSelect"),
+      dayBadge: $("#dayBadge"),
+      progressText: $("#progressText"),
+      todayDoneText: $("#todayDoneText"),
+      progressFill: $("#progressFill"),
+      todayList: $("#todayList"),
+      startTodayBtn: $("#startTodayBtn"),
+      startTodayQuizBtn: $("#startTodayQuizBtn"),
+      flashCard: $("#flashCard"),
+      frontKanji: $("#frontKanji"),
+      frontWord: $("#frontWord"),
+      frontMeaning: $("#frontMeaning"),
+      backWord: $("#backWord"),
+      backKanji: $("#backKanji"),
+      backMeaning: $("#backMeaning"),
+      backLevel: $("#backLevel"),
+      exampleJa: $("#exampleJa"),
+      exampleKo: $("#exampleKo"),
+      exampleSpeakBtn: $("#exampleSpeakBtn"),
+      favoriteBtn: $("#favoriteBtn"),
+      speakBtn: $("#speakBtn"),
+      prevCardBtn: $("#prevCardBtn"),
+      nextCardBtn: $("#nextCardBtn"),
+      markDoneBtn: $("#markDoneBtn"),
+      quizType: $("#quizType"),
+      quizQuestion: $("#quizQuestion"),
+      quizOptions: $("#quizOptions"),
+      quizMessage: $("#quizMessage"),
+      listenQuizBtn: $("#listenQuizBtn"),
+      nextQuizBtn: $("#nextQuizBtn"),
+      wordSearch: $("#wordSearch"),
+      wordFilter: $("#wordFilter"),
+      wordList: $("#wordList"),
+      wrongCount: $("#wrongCount"),
+      wrongList: $("#wrongList"),
+      startWrongQuizBtn: $("#startWrongQuizBtn"),
+      clearWrongBtn: $("#clearWrongBtn")
+    };
+
+    init();
+
+    function init() {
+      bindEvents();
+      state.flashPool = getTodayWords();
+      state.quizPool = getTodayWords();
+      renderAll();
+    }
+
+    function bindEvents() {
+      elements.levelSelect.addEventListener("change", (event) => {
+        state.level = event.target.value;
+        state.flashPool = getFilteredData();
+        state.flashIndex = 0;
+        renderAll();
+      });
+
+      $$('[data-move]').forEach((button) => {
+        button.addEventListener("click", () => moveSection(button.dataset.move));
+      });
+
+      elements.startTodayBtn.addEventListener("click", () => {
+        state.flashPool = getTodayWords();
+        state.flashIndex = 0;
+        moveSection("flashSection");
+        renderFlashCard();
+      });
+
+      elements.startTodayQuizBtn.addEventListener("click", () => {
+        startQuiz(getTodayWords());
+        moveSection("quizSection");
+      });
+
+      elements.flashCard.addEventListener("click", () => {
+        flipCard();
+      });
+
+      elements.flashCard.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          flipCard();
+        }
+      });
+
+      elements.favoriteBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const item = getCurrentFlashItem();
+        toggleSetItem("favorites", item.id);
+        renderFlashCard();
+        renderWordList();
+      });
+
+      elements.speakBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        speakCurrentWord();
+      });
+
+      elements.exampleSpeakBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const item = getCurrentFlashItem();
+        if (item) speak(item.example);
+      });
+
+      elements.prevCardBtn.addEventListener("click", () => changeCard(-1));
+      elements.nextCardBtn.addEventListener("click", () => changeCard(1));
+      elements.markDoneBtn.addEventListener("click", markCurrentDone);
+
+      elements.listenQuizBtn.addEventListener("click", () => {
+        if (state.currentQuiz) speak(state.currentQuiz.item.word);
+      });
+
+      elements.nextQuizBtn.addEventListener("click", nextQuiz);
+      elements.wordSearch.addEventListener("input", renderWordList);
+      elements.wordFilter.addEventListener("change", renderWordList);
+
+      elements.wordList.addEventListener("click", (event) => {
+        const card = event.target.closest(".word-card[data-id]");
+        if (!card) return;
+        playWordAndExample(Number(card.dataset.id));
+      });
+
+      elements.wrongList.addEventListener("click", (event) => {
+        const card = event.target.closest(".word-card[data-id]");
+        if (!card) return;
+        playWordAndExample(Number(card.dataset.id));
+      });
+
+      elements.startWrongQuizBtn.addEventListener("click", () => {
+        const wrong = KANJI_DATA.filter((item) => state.progress.wrong.includes(item.id));
+        startQuiz(wrong.length ? wrong : getTodayWords());
+        moveSection("quizSection");
+      });
+
+      elements.clearWrongBtn.addEventListener("click", () => {
+        state.progress.wrong = [];
+        saveProgress();
+        renderReview();
+        renderWordList();
+      });
+    }
+
+    function moveSection(sectionId) {
+      state.section = sectionId;
+      elements.sections.forEach((section) => section.classList.toggle("active", section.id === sectionId));
+      elements.navBtns.forEach((btn) => btn.classList.toggle("active", btn.dataset.move === sectionId));
+      if (sectionId === "flashSection") renderFlashCard();
+      if (sectionId === "quizSection" && !state.currentQuiz) startQuiz(getTodayWords());
+      if (sectionId === "wordsSection") renderWordList();
+      if (sectionId === "reviewSection") renderReview();
+    }
+
+    function loadProgress() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return { learned: [], wrong: [], favorites: [], startDate: getTodayKey() };
+      try { return JSON.parse(saved); }
+      catch { return { learned: [], wrong: [], favorites: [], startDate: getTodayKey() }; }
+    }
+
+    function saveProgress() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.progress));
+    }
+
+    function getTodayKey() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    }
+
+    function getDayNumber() {
+      const start = new Date(state.progress.startDate + "T00:00:00");
+      const today = new Date(getTodayKey() + "T00:00:00");
+      const diff = Math.floor((today - start) / 86400000);
+      return Math.max(1, Math.min(60, diff + 1));
+    }
+
+    function getTodayWords() {
+      const day = getDayNumber();
+      const start = (day - 1) * DAILY_COUNT;
+      return getFilteredData().slice(start, start + DAILY_COUNT);
+    }
+
+    function getFilteredData() {
+      if (state.level === "ALL") return KANJI_DATA;
+      return KANJI_DATA.filter((item) => item.level === state.level);
+    }
+
+    function renderAll() {
+      renderHome();
+      renderFlashCard();
+      renderWordList();
+      renderReview();
+    }
+
+    function renderHome() {
+      const learnedCount = state.progress.learned.length;
+      const today = getTodayWords();
+      const todayDone = today.filter((item) => state.progress.learned.includes(item.id)).length;
+      const percent = Math.min(100, Math.round((learnedCount / TOTAL_TARGET) * 100));
+
+      elements.dayBadge.textContent = `Day ${getDayNumber()} / 60`;
+      elements.progressText.textContent = `${learnedCount} / ${TOTAL_TARGET}개 학습`;
+      elements.todayDoneText.textContent = `오늘 ${todayDone} / ${DAILY_COUNT}개`;
+      elements.progressFill.style.width = `${percent}%`;
+
+      elements.todayList.innerHTML = today.map((item) => `
+        <li class="today-item ${state.progress.learned.includes(item.id) ? "done" : ""}">
+          <div>
+            <div class="today-word">${formatWord(item)}</div>
+            <div class="meaning">${item.meaning}</div>
+          </div>
+          <span class="status-dot" aria-hidden="true"></span>
+        </li>
+      `).join("");
+    }
+
+    function renderFlashCard() {
+      if (!state.flashPool.length) state.flashPool = getFilteredData();
+      const item = getCurrentFlashItem();
+      if (!item) return;
+
+      elements.flashCard.classList.remove("flipped");
+      elements.frontKanji.textContent = item.kanji.replaceAll(" ", "");
+      elements.frontWord.innerHTML = formatWord(item);
+      elements.frontMeaning.textContent = item.meaning;
+      elements.backWord.innerHTML = formatWord(item);
+      elements.backKanji.innerHTML = `<span class="detail-label">한자:</span> ${item.kanji}`;
+      elements.backMeaning.innerHTML = `<span class="detail-label">뜻:</span> ${item.meaning}`;
+      elements.backLevel.innerHTML = `<span class="detail-label">수준:</span> ${item.level}`;
+      elements.exampleJa.innerHTML = annotateJapanese(item.example);
+      elements.exampleKo.textContent = item.exampleKo;
+      elements.favoriteBtn.textContent = state.progress.favorites.includes(item.id) ? "★" : "☆";
+      elements.favoriteBtn.classList.toggle("on", state.progress.favorites.includes(item.id));
+      elements.markDoneBtn.textContent = state.progress.learned.includes(item.id) ? "학습 완료됨" : "학습 완료";
+      elements.markDoneBtn.disabled = state.progress.learned.includes(item.id);
+    }
+
+    function getCurrentFlashItem() {
+      return state.flashPool[state.flashIndex] || state.flashPool[0];
+    }
+
+    function changeCard(direction) {
+      if (!state.flashPool.length) return;
+      state.flashIndex = (state.flashIndex + direction + state.flashPool.length) % state.flashPool.length;
+      renderFlashCard();
+    }
+
+    function markCurrentDone() {
+      const item = getCurrentFlashItem();
+      if (!item) return;
+      if (!state.progress.learned.includes(item.id)) state.progress.learned.push(item.id);
+      saveProgress();
+      renderHome();
+      renderFlashCard();
+      setTimeout(() => changeCard(1), 250);
+    }
+
+    function startQuiz(pool) {
+      state.quizPool = pool.length ? shuffle([...pool]) : shuffle([...KANJI_DATA]);
+      state.quizIndex = 0;
+      nextQuiz();
+    }
+
+    function nextQuiz() {
+      elements.quizMessage.style.display = "none";
+      elements.nextQuizBtn.disabled = true;
+      if (!state.quizPool.length) state.quizPool = shuffle([...KANJI_DATA]);
+      const item = state.quizPool[state.quizIndex % state.quizPool.length];
+      state.quizIndex += 1;
+      state.currentQuiz = makeQuiz(item);
+      renderQuiz();
+    }
+
+    function makeQuiz(item) {
+      const types = ["meaning", "reading", "example", "listening"];
+      const type = types[Math.floor(Math.random() * types.length)];
+      let question = "";
+      let answer = "";
+      let typeLabel = "";
+
+      if (type === "meaning") {
+        typeLabel = "뜻 고르기";
+        question = `${formatWordText(item)}의 뜻은?`;
+        answer = item.meaning;
+      }
+
+      if (type === "reading") {
+        typeLabel = "히라가나 고르기";
+        question = `${item.word}의 올바른 읽기는?`;
+        answer = item.reading;
+      }
+
+      if (type === "example") {
+        typeLabel = "예문 빈칸";
+        question = item.example.replace(item.word, "____");
+        answer = formatWordText(item);
+      }
+
+      if (type === "listening") {
+        typeLabel = "듣고 고르기";
+        question = "발음을 듣고 맞는 단어를 고르세요.";
+        answer = formatWordText(item);
+        setTimeout(() => speak(item.word), 300);
+      }
+
+      const optionSource = KANJI_DATA.filter((other) => other.id !== item.id);
+      const wrongOptions = shuffle(optionSource).slice(0, 3).map((other) => {
+        if (type === "meaning") return other.meaning;
+        if (type === "reading") return other.reading;
+        return formatWordText(other);
+      });
+
+      return { item, type, typeLabel, question, answer, options: shuffle([answer, ...wrongOptions]) };
+    }
+
+    function renderQuiz() {
+      const quiz = state.currentQuiz;
+      elements.quizType.textContent = quiz.typeLabel;
+      elements.quizQuestion.innerHTML = quiz.question;
+      elements.listenQuizBtn.style.display = quiz.type === "listening" ? "block" : "none";
+      elements.quizOptions.innerHTML = quiz.options.map((option) => `
+        <button class="option" type="button">${option}</button>
+      `).join("");
+
+      $$(".option").forEach((button) => {
+        button.addEventListener("click", () => checkAnswer(button));
+      });
+    }
+
+    function checkAnswer(button) {
+      const quiz = state.currentQuiz;
+      const isCorrect = button.textContent === quiz.answer;
+
+      $$(".option").forEach((option) => {
+        option.disabled = true;
+        if (option.textContent === quiz.answer) option.classList.add("correct");
+      });
+
+      if (!isCorrect) {
+        button.classList.add("wrong");
+        if (!state.progress.wrong.includes(quiz.item.id)) state.progress.wrong.push(quiz.item.id);
+      }
+
+      elements.quizMessage.style.display = "block";
+      elements.quizMessage.innerHTML = isCorrect
+        ? `정답입니다.<br>${formatWordText(quiz.item)} · ${quiz.item.meaning}`
+        : `오답입니다.<br>정답: ${quiz.answer}<br>${formatWordText(quiz.item)} · ${quiz.item.meaning}`;
+
+      elements.nextQuizBtn.disabled = false;
+      saveProgress();
+      renderReview();
+    }
+
+    function renderWordList() {
+      const keyword = elements.wordSearch.value.trim().toLowerCase();
+      const filter = elements.wordFilter.value;
+
+      let data = [...KANJI_DATA];
+      if (filter === "N5" || filter === "N4") data = data.filter((item) => item.level === filter);
+      if (filter === "FAVORITE") data = data.filter((item) => state.progress.favorites.includes(item.id));
+      if (filter === "WRONG") data = data.filter((item) => state.progress.wrong.includes(item.id));
+
+      if (keyword) {
+        data = data.filter((item) => [item.word, item.reading, item.meaning, item.example, item.exampleReading, item.exampleKo].some((value) => value.toLowerCase().includes(keyword)));
+      }
+
+      elements.wordList.innerHTML = data.map((item) => wordCardTemplate(item)).join("") || `<li class="word-card">표시할 단어가 없습니다.</li>`;
+    }
+
+    function renderReview() {
+      const wrong = KANJI_DATA.filter((item) => state.progress.wrong.includes(item.id));
+      elements.wrongCount.textContent = `${wrong.length}개`;
+      elements.wrongList.innerHTML = wrong.map((item) => wordCardTemplate(item)).join("") || `<li class="word-card">아직 오답 단어가 없습니다.</li>`;
+    }
+
+    function wordCardTemplate(item) {
+      return `
+        <li class="word-card" data-id="${item.id}" aria-label="${item.word} 발음과 예문 듣기">
+          <strong>${formatWord(item)}</strong>
+          <div class="meaning">${item.level} · ${item.meaning}</div>
+          <div class="meaning">${annotateJapanese(item.example)}</div>
+          <div class="meaning">${item.exampleKo}</div>
+          <div class="word-card-guide">탭하면 단어 발음 후 1초 뒤 예문 발음이 나와요</div>
+        </li>
+      `;
+    }
+
+    function formatWord(item) {
+      return `${item.word}<span class="reading">（${item.reading}）</span>`;
+    }
+
+    function formatWordText(item) {
+      return `${item.word}（${item.reading}）`;
+    }
+
+    function annotateJapanese(text) {
+      const readings = {
+        "日本料理": "にほんりょうり",
+        "日本語": "にほんご",
+        "日本": "にほん",
+        "学校": "がっこう",
+        "先生": "せんせい",
+        "質問": "しつもん",
+        "時間": "じかん",
+        "友達": "ともだち",
+        "電車": "でんしゃ",
+        "会社": "かいしゃ",
+        "大学": "だいがく",
+        "勉強": "べんきょう",
+        "練習": "れんしゅう",
+        "漢字": "かんじ",
+        "答え": "こたえ",
+        "意味": "いみ",
+        "言葉": "ことば",
+        "宿題": "しゅくだい",
+        "授業": "じゅぎょう",
+        "仕事": "しごと",
+        "病院": "びょういん",
+        "医者": "いしゃ",
+        "風邪": "かぜ",
+        "天気": "てんき",
+        "夏休み": "なつやすみ",
+        "旅行": "りょこう",
+        "家族": "かぞく",
+        "公園": "こうえん",
+        "映画": "えいが",
+        "音楽": "おんがく",
+        "新聞": "しんぶん",
+        "名前": "なまえ",
+        "毎日": "まいにち",
+        "明日": "あした",
+        "今日": "きょう",
+        "父": "ちち",
+        "母": "はは",
+        "兄": "あに",
+        "家": "いえ",
+        "店": "みせ",
+        "日曜日": "にちようび",
+        "朝": "あさ",
+        "お茶": "おちゃ",
+        "川": "かわ",
+        "山": "やま",
+        "人": "ひと",
+        "男": "おとこ",
+        "女": "おんな",
+        "子供": "こども",
+        "食べます": "たべます",
+        "飲みます": "のみます",
+        "見ます": "みます",
+        "聞きます": "ききます",
+        "書いて": "かいて",
+        "書きます": "かきます",
+        "読みます": "よみます",
+        "行きました": "いきました",
+        "行きます": "いきます",
+        "来ます": "きます",
+        "帰ります": "かえります",
+        "買います": "かいます",
+        "休みます": "やすみます",
+        "話しています": "はなしています",
+        "話します": "はなします",
+        "覚えます": "おぼえます",
+        "忘れました": "わすれました",
+        "始まります": "はじまります",
+        "終わりました": "おわりました",
+        "使います": "つかいます",
+        "待ちます": "まちます",
+        "近く": "ちかく",
+        "歩きます": "あるきます",
+        "遊びます": "あそびます",
+        "見えます": "みえます",
+        "知っています": "しっています",
+        "新しい": "あたらしい",
+        "難しい": "むずかしい",
+        "好き": "すき",
+        "楽しみ": "たのしみ",
+        "暖かい": "あたたかい",
+        "寒い": "さむい",
+        "青い": "あおい",
+        "薬": "くすり",
+        "雨": "あめ",
+        "雪": "ゆき",
+        "空": "そら",
+        "海": "うみ",
+        "春": "はる",
+        "夏": "なつ",
+        "秋": "あき",
+        "冬": "ふゆ",
+        "降っています": "ふっています",
+        "降りました": "ふりました",
+        "六時": "ろくじ",
+        "七時": "しちじ",
+        "九時": "くじ",
+        "四人": "よにん"
+      };
+
+      let result = text;
+      Object.keys(readings)
+        .sort((a, b) => b.length - a.length)
+        .forEach((word) => {
+          const annotated = `${word}<span class="reading">（${readings[word]}）</span>`;
+          result = result.split(word).join(annotated);
+        });
+      return result;
+    }
+
+    function flipCard() {
+      elements.flashCard.classList.toggle("flipped");
+      if (elements.flashCard.classList.contains("flipped")) speakCurrentWord();
+    }
+
+    function toggleSetItem(key, id) {
+      const list = state.progress[key];
+      const index = list.indexOf(id);
+      if (index >= 0) list.splice(index, 1);
+      else list.push(id);
+      saveProgress();
+    }
+
+    function speakCurrentWord() {
+      const item = getCurrentFlashItem();
+      if (item) speak(item.word);
+    }
+
+    function playWordAndExample(id) {
+      const item = KANJI_DATA.find((word) => word.id === id);
+      if (!item) return;
+      speakSequence([item.word, item.example]);
+    }
+
+    function speakSequence(texts) {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const queue = texts.filter(Boolean);
+      let index = 0;
+
+      const playNext = () => {
+        if (index >= queue.length) return;
+        const utterance = new SpeechSynthesisUtterance(queue[index]);
+        utterance.lang = "ja-JP";
+        utterance.rate = 0.82;
+        utterance.onend = () => {
+          index += 1;
+          setTimeout(playNext, 1000);
+        };
+        window.speechSynthesis.speak(utterance);
+      };
+
+      playNext();
+    }
+
+    function speak(text) {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "ja-JP";
+      utterance.rate = 0.82;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+  </script>
+</body>
+</html>
